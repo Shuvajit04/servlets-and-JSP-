@@ -29,3 +29,71 @@ It focuses on how client requests are handled by servlets, how JSP is used for t
 ---
 
 ## 🗂️ Project Structure
+
+
+# Java Application Using Spring and Hibernate
+
+## 📘 Overview
+This project demonstrates the integration of **Spring Framework** and **Hibernate ORM** to build a robust Java application.  
+It covers key enterprise-level concepts including **Dependency Injection (DI)**, **CRUD Operations**, and **Transaction Management**.  
+The goal is to show how Spring manages application components and Hibernate handles database operations efficiently.
+
+---
+
+## 🎯 Objectives
+- Understand **Spring Core** and **Dependency Injection (DI)** principles.
+- Implement **CRUD operations** using Hibernate ORM.
+- Manage **transactions** using Spring's declarative transaction management.
+- Integrate **Spring and Hibernate** in a single modular Java application.
+- Learn best practices for **loose coupling** and **object persistence**.
+
+---
+
+## 🧱 Technologies Used
+| Component | Technology |
+|------------|-------------|
+| Programming Language | Java |
+| Frameworks | Spring, Hibernate |
+| Database | MySQL (or any relational DB) |
+| ORM | Hibernate 5+ |
+| Server | Apache Tomcat (optional) |
+| Build Tool | Maven |
+| IDE | IntelliJ IDEA / Eclipse / VS Code |
+
+---
+
+## 🗂️ Project Structure
+
+# Java Application Using Spring and Hibernate
+
+## 📘 Overview
+This project demonstrates the integration of **Spring Framework** and **Hibernate ORM** to build a robust Java application.  
+It covers key enterprise-level concepts including **Dependency Injection (DI)**, **CRUD Operations**, and **Transaction Management**.  
+The goal is to show how Spring manages application components and Hibernate handles database operations efficiently.
+
+---
+
+## 🎯 Objectives
+- Understand **Spring Core** and **Dependency Injection (DI)** principles.
+- Implement **CRUD operations** using Hibernate ORM.
+- Manage **transactions** using Spring's declarative transaction management.
+- Integrate **Spring and Hibernate** in a single modular Java application.
+- Learn best practices for **loose coupling** and **object persistence**.
+
+---
+
+## 🧱 Technologies Used
+| Component | Technology |
+|------------|-------------|
+| Programming Language | Java |
+| Frameworks | Spring, Hibernate |
+| Database | MySQL (or any relational DB) |
+| ORM | Hibernate 5+ |
+| Server | Apache Tomcat (optional) |
+| Build Tool | Maven |
+| IDE | IntelliJ IDEA / Eclipse / VS Code |
+
+---
+
+## 🗂️ Project Structure
+
