@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>spring-hibernate-transaction-demo</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <spring.version>6.1.1</spring.version>
+        <hibernate.version>6.4.1.Final</hibernate.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-orm</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.4.14</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+```eof
+
+### `MainApplication.java`
+
+This is the main entry point that runs both the DI and Transaction demos.
+
+```java:MainApplication.java
+package com.example;
+
+import com.example.bank.AccountDAO;
+import com.example.bank.AccountService;
+import com.example.config.AppConfig;
+import com.example.di.Student;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+import java.math.BigDecimal;
+
+public class MainApplication {
+
+    public static void main(String[] args) {
+        // 1. Initialize Spring Context using Java-based configuration
+        System.out.println("Starting Spring Application Context...");
+        AnnotationConfigApplicationContext context = 
+                new AnnotationConfigApplicationContext(AppConfig.class);
+        System.out.println("Context initialized successfully.\n");
+        
+        // --- Task 2: Dependency Injection Demonstration ---
+        
+        // Retrieve the Student bean (which has the Course dependency injected)
+        Student student = context.getBean(Student.class);
+        student.displayEnrollmentDetails();
+        
+        // --- Task 1: Transaction Management Demonstration ---
+        
+        AccountService accountService = context.getBean(AccountService.class);
+        AccountDAO accountDAO = context.getBean(AccountDAO.class);
+
+        // 1. Initialize accounts (pre-populates H2 DB)
+        accountDAO.initializeAccounts();
+        accountService.displayBalances();
+
+        // SCENARIO 1: Successful Transaction
+        try {
+            System.out.println("\n----- SCENARIO 1: Successful Transfer (No Failure) -----");
+            accountService.transferMoney(1001L, 1002L, new BigDecimal("50.00"), false);
+            System.out.println("Transaction finished. Balances should reflect change.");
+        } catch (Exception e) {
+            System.err.println("Transaction failed unexpectedly: " + e.getMessage());
+        }
+        accountService.displayBalances();
+        
+        // SCENARIO 2: Failed Transaction (Rollback Demonstration)
+        try {
+            System.out.println("\n----- SCENARIO 2: Failed Transfer (Rollback Test) -----");
+            // Alice (1001) tries to send 200.00 to Bob (1002), but we force a failure.
+            accountService.transferMoney(1001L, 1002L, new BigDecimal("200.00"), true);
+        } catch (RuntimeException e) {
+            System.err.println("\nRollback expected. Error: " + e.getMessage());
+            // Since the transaction rolled back, Alice's balance should NOT have changed.
+        }
+
+        System.out.println("\nVerification: Balances after the FAILED transaction attempt.");
+        accountService.displayBalances();
+        
+        // Close the context
+        context.close();
+    }
+}
+```eof
+
+## 2. Dependency Injection (`di` folder)
+
+### `Course.java`
+
+```java:di/Course.java
+package com.example.di;
+
+// Dependent class
+public class Course {
+    private final String name;
+
+    public Course(String name) {
+        this.name = name;
+    }
+
+    public String getCourseInfo() {
+        return "Enrolled in Course: " + name;
+    }
+}
+```eof
+
+### `Student.java`
+
+```java:di/Student.java
+package com.example.di;
+
+// Class that depends on Course
+public class Student {
+    private final String studentName;
+    private final Course course; // Dependency
+
+    // Constructor Injection
+    public Student(String studentName, Course course) {
+        this.studentName = studentName;
+        this.course = course;
+    }
+
+    public void displayEnrollmentDetails() {
+        System.out.println("\n--- Dependency Injection Demonstration ---");
+        System.out.println("Student: " + studentName);
+        System.out.println(course.getCourseInfo());
+        System.out.println("------------------------------------------");
+    }
+}
+```eof
+
+## 3. Banking System (`bank` folder)
+
+### `Account.java`
+
+```java:bank/Account.java
+package com.example.bank;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+
+// Hibernate Entity
+@Entity
+@Table(name = "ACCOUNTS")
+public class Account {
+    
+    @Id
+    private Long id;
+    
+    private String ownerName;
+    
+    // Use BigDecimal for currency to avoid floating-point issues
+    private BigDecimal balance;
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getOwnerName() { return ownerName; }
+    public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
+    public BigDecimal getBalance() { return balance; }
+    public void setBalance(BigDecimal balance) { this.balance = balance; }
+
+    @Override
+    public String toString() {
+        return "Account{id=" + id + ", ownerName='" + ownerName + "', balance=" + balance + '}';
+    }
+}
+```eof
+
+### `Transaction.java`
+
+```java:bank/Transaction.java
+package com.example.bank;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+// Hibernate Entity to track transfers
+@Entity
+@Table(name = "TRANSACTIONS")
+public class Transaction {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    private Long fromAccountId;
+    private Long toAccountId;
+    private BigDecimal amount;
+    private LocalDateTime timestamp = LocalDateTime.now();
+    
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getFromAccountId() { return fromAccountId; }
+    public void setFromAccountId(Long fromAccountId) { this.fromAccountId = fromAccountId; }
+    public Long getToAccountId() { return toAccountId; }
+    public void setToAccountId(Long toAccountId) { this.toAccountId = toAccountId; }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public LocalDateTime getTimestamp() { return timestamp; }
+    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+
+    @Override
+    public String toString() {
+        return "Transaction{id=" + id + ", from=" + fromAccountId + ", to=" + toAccountId + ", amount=" + amount + ", time=" + timestamp + '}';
+    }
+}
+```eof
+
+### `AccountDAO.java`
+
+```java:bank/AccountDAO.java
+package com.example.bank;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+// Persistence Layer: Handles direct database interaction
+@Repository
+public class AccountDAO {
+
+    private final SessionFactory sessionFactory;
+
+    // Dependency Injection (Constructor Injection)
+    @Autowired
+    public AccountDAO(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+
+    private Session getCurrentSession() {
+        return sessionFactory.getCurrentSession();
+    }
+
+    public Account findById(Long id) {
+        return getCurrentSession().find(Account.class, id);
+    }
+
+    public void update(Account account) {
+        getCurrentSession().merge(account);
+    }
+
+    public void saveTransaction(Transaction transaction) {
+        getCurrentSession().persist(transaction);
+    }
+
+    public List<Account> findAll() {
+        return getCurrentSession().createQuery("from Account", Account.class).list();
+    }
+
+    // Utility method to set up initial data (called outside of main transaction block)
+    public void initializeAccounts() {
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            
+            // Clean slate
+            session.createMutationQuery("DELETE from Transaction").executeUpdate();
+            session.createMutationQuery("DELETE from Account").executeUpdate();
+
+            Account a1 = new Account();
+            a1.setId(1001L);
+            a1.setOwnerName("Alice");
+            a1.setBalance(new BigDecimal("1000.00"));
+
+            Account a2 = new Account();
+            a2.setId(1002L);
+            a2.setOwnerName("Bob");
+            a2.setBalance(new BigDecimal("500.00"));
+            
+            session.persist(a1);
+            session.persist(a2);
+            session.getTransaction().commit();
+            System.out.println("--- Initial Account Balances Set ---");
+        } catch (Exception e) {
+            System.err.println("Error initializing accounts: " + e.getMessage());
+        }
+    }
+}
+```eof
+
+
+```java:bank/AccountService.java
+package com.example.bank;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+
+// Service Layer: Contains business logic and transaction demarcation
+@Service
+public class AccountService {
+
+    private final AccountDAO accountDAO;
+
+    @Autowired
+    public AccountService(AccountDAO accountDAO) {
+        this.accountDAO = accountDAO;
+    }
+
+    // CORE REQUIREMENT: This method is transactional.
+    @Transactional
+    public void transferMoney(Long fromId, Long toId, BigDecimal amount, boolean introduceFailure) {
+        System.out.println("\n--- Attempting Transfer: " + amount + " from " + fromId + " to " + toId + " ---");
+
+        Account fromAccount = accountDAO.findById(fromId);
+        Account toAccount = accountDAO.findById(toId);
