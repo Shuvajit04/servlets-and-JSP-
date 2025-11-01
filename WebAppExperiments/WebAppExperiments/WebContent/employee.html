@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Employee Portal</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h2 { border-bottom: 2px solid #ccc; padding-bottom: 5px; }
+    form { max-width: 400px; margin: 10px 0; }
+    input[type="text"] { padding: 8px; border: 1px solid #ccc; }
+    input[type="submit"] { padding: 8px 15px; background-color: #007bff; color: white; border: none; cursor: pointer; }
+</style>
+</head>
+<body>
+    <h1>Employee Management</h1>
+    
+    <h2>Search Employee by ID</h2>
+    <form action="EmployeeServlet" method="GET">
+        <label for="empId">Enter Employee ID:</label>
+        <input type="text" id="empId" name="empId" placeholder="e.g., 101" required>
+        <input type="submit" value="Search">
+    </form>
+    
+    <hr>
+    
+    <h2>View All Employees</h2>
+    <p><a href="EmployeeServlet">Click here to view all employees</a></p>
+    
+</body>
+</html>
